@@ -1,26 +1,14 @@
-/* Minimal linker script for micro:bit version 1 */
+/* *Very* minimal linker script for micro:bit version 1 */
+/* Use the -T argument to ld to specify this script */
 
-/* nrf.ld (from Nordic) also says:
+/* WHAT'S MISSING */
+/* - .data, .bss */
+/* - peripherals, either ARM or Nordic */
 
-SEARCH_DIR(.)
+OUTPUT_FORMAT ("elf32-littlearm")
 
-pp. 57
-SEARCH_DIR(path) The SEARCH_DIR command adds path to the list of paths where ld
-  looks for archive libraries. Using SEARCH_DIR(path) is exactly like using ‘-L
-  path’ on the command line (see Section 2.1 [Command-line Options], page 3). If
-  both are used, then the linker will search both paths. Paths specified using
-  the command-line option are searched first.
-
-
-GROUP(-lgcc -lc -lnosys)
-
-pp. 56
-GROUP(file file ...) The GROUP command is like INPUT, except that the named
-  files should all be archives, and they are searched repeatedly until no new
-  undefined references are created. See the description of ‘-(’ in Section 2.1
-  [Command-line Options], page 3.
-
-*/
+/* This is the memory layout of the nRF51822_xxaa, used in the micro:bit version */
+/* 1 */
 
 /* The names FLASH and RAM are defined by the MEMORY command. They are not used */
 /* outside this script and are in a different namespace from symbols, filenames, */
@@ -32,27 +20,45 @@ MEMORY {
        RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 16K
 }
 
+/* There's no obligation to set the "entry point," since the M0 starts execution
+at the address in 0x04. However, Spivey notes that setting it helps GDB find the
+stack bottom. (Although I am not sure how?) */
+
+/* __reset is a symbol defined elsewhere. Somehow we need to make sure that it */
+/* ends up at 0x00000004.  */
+ENTRY(__reset)
+
+/* The KEEP stops this section being "garbage collected;" however section */
+/* garbage collection is not enabled by default. You'd need to use the */
+/* --gc-sections argument to ld to enable it. */ 
 SECTIONS {
   .text : {
+        KEEP(*(.vectors)) 
         *(.text) 
         *(.rodata)
   } > FLASH
-  .data : {
+
+ /* This linker script does not support static data! */
+ /* The .data section needs an AT (it's initialised data but lives in RAM) */
+ /*
+ .data : {
         *(.data)
-  } > RAM
+  } > RAM --
+*/
+
+/* If we write assembly, we'll need to write our own startup code to zero
+  these out. */
+/* Also need a COMMON here */
+/*
   .bss : {
        *(.bss)
   } > RAM
 }
+*/
 
+  
 
-/* Spivey's script also does:
-
-OUTPUT_FORMAT ("elf32-littlearm")
--- see pp. 57
-
-ENTRY(__reset)
--- see pp. 55
+/*
 
 SECTIONS {
     .text : {
@@ -112,11 +118,11 @@ SECTIONS {
 
     /* Set stack top to end of RAM, and move stack limit down by
        size of stack */
-    __stack = ORIGIN(RAM) + LENGTH(RAM);
-    __stack_limit = __stack - 2048;
 
     /* Check if data + stack exceeds RAM limit */
-    ASSERT(__stack_limit >= __end, "region RAM overlaps with stack")
-}
+/*
+    __stack = ORIGIN(RAM) + LENGTH(RAM);
+    __stack_limit = __stack - 2048; 
 
+    ASSERT(__stack_limit >= __end, "region RAM overlaps with stack")
 */
