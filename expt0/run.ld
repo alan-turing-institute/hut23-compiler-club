@@ -57,6 +57,8 @@ SECTIONS {
 */
 
   
+/* PROVIDE(symbol = expression) defines symbol only if it is referenced by some */
+/* other place but never defined.  */
 
 /*
 
