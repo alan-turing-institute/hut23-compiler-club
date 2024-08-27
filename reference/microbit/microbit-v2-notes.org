@@ -1,0 +1,183 @@
+#+title: Notes on the Micro:bit v2.
+
+These are JG's notes on the configuration of the v2 micro:bit.
+
+** Sizes
+
+2^32 bytes is 4 GB. 
+
+
+** Processor
+
+The processor is an Arm Cortex M4F (the F means with floating-point
+extensions). The architecture is ARMv7E-M. The floating-point
+extensions are FPv4-SP. (SP stands for single precision.)
+
+The M4 has several optional extensions. Some of these are available in
+the version used in the nRF52833. The following options are
+culled from the Arm docs and the Nordic docs (which don't seem
+particularly terminologically consistent with each other).
+
+| Option                          |        | Chosen by nRF52833 |
+|---------------------------------+--------+--------------------|
+| Number of interrupts            | NVIC   | 48                 |
+| Levels of interrupt priorities  |        | 2^3                |
+| SysTick timer                   |        | Yes                |
+| Memory Protection Unit          | MPU    | Yes                |
+| Floating Point Unit             | FPU    | Yes                |
+|---------------------------------+--------+--------------------|
+| Instrument Trace Macrocell      | ITM    | Yes                |
+| Data Watchpoint and Trace       | DWT    | Yes                |
+| Embedded Trace Macrocell        | ETM    | Yes                |
+| Trace Port Interface Unit       | TPIU   | Yes                |
+| Debug Access Port               | DAP    | Yes                |
+| Flash Patch and Breakpoint Unit | FBP    | Yes                |
+|---------------------------------+--------+--------------------|
+| Bit-banding                     |        | No                 |
+| Wake-up interrupt controller    | WIC    | No                 |
+| AHB Trace Macrocell             | HTM    | No                 |
+|---------------------------------+--------+--------------------|
+| Adv. High-Perf. Bus Access Port | AHB-AP | ?                  |
+| Constant AHB control            |        | ?                  |
+
+Source: Arm Cortex M4 Processor Datasheet; Arm Cortex M4 Generic User
+Guide; Arm Cortex M4 Technical Reference Manual; nRF52833 Product Specification.
+
+*** Memory
+
+The following map of the available address space is in 0.5 GiB chunks.
+
+| From         | GiB | To           | Size    |                        |
+|--------------+-----+--------------+---------+------------------------|
+| 0x E010 0000 |     | 0x FFF FFFFF | 511 MiB | Vendor-specific memory |
+| 0x E000 0000 | 3.5 | 0x E00F FFFF | 1 MiB   | Private peripheral bus |
+|--------------+-----+--------------+---------+------------------------|
+| 0x A000 0000 | 2.5 | 0x DFFF FFFF | 1.0 GiB | External device        |
+|--------------+-----+--------------+---------+------------------------|
+| 0x 6000 0000 | 1.5 | 0x 9FFF FFFF | 1.0 iGB | External RAM           |
+|--------------+-----+--------------+---------+------------------------|
+| 0x 4000 0000 | 1.0 | 0x 5FFF FFFF | 0.5 GiB | Peripheral             |
+|--------------+-----+--------------+---------+------------------------|
+| 0x 2000 0000 | 0.5 | 0x 3FFF FFFF | 0.5 GiB | SRAM                   |
+|--------------+-----+--------------+---------+------------------------|
+| 0x 0000 0000 | 0.0 | 0x 1FFF FFFF | 0.5 GiB | Code                   |
+|--------------+-----+--------------+---------+------------------------|
+
+The private peripheral bus memory starting at 0xE0000000 is for the
+core peripheral registers (those in the CPU); the memory starting at
+0x40000000 is for additional peripherals.
+
+*** Reset
+
+On reset:
+
+1. The main stack pointer (MSP) is loaded with the value in address 0x0;
+
+2. The link register (LR) is set to 0xFFFFFFFF;
+
+3. The program counter (PC) is set to the value of the reset vector,
+   which is at address 0x04.
+
+4. Execution resumes, at the PC, in privileged Thread mode.
+
+
+** System on a chip
+
+The SoC is a Nordic Semiconductor nRF52833. 
+
+*** Memory
+
+The nRF52833 has 128 kB of RAM and 512 kB of Flash. 
+
+The "code" section in the memory, from 0x0 to 0x1FFFFFFF, is assigned
+as follows:
+
+| From         |        | To           | Size   |          |
+|--------------+--------+--------------+--------+----------|
+|              |        | 0x 1FFF FFFF |        |          |
+| 0x 1000 1000 | + 4 kB | ?            | UICR   |          |
+| 0x 1000 0000 | 256 MB | ?            | FICR   |          |
+| 0x 0080 0000 | 8 MB   | 0x 0082 0000 | 128 kB | Code RAM |
+| 0x 0000 0000 | 0      | 0x 0008 0000 | 512 kB | Flash    |
+|--------------+--------+--------------+--------+----------|
+
+FICR is the Factory Information Configuration Registers. There are
+about 50 of these but they are not contiguous in this memory
+region. UICR is the User Information Configuration Registers and are
+non-volatile memory (which must be written in a special way like the
+flash memory). They go up to about an offset of 0x308 from the
+beginning and many are reserved.
+
+The "SRAM" section contains a mapped version of the same RAM as in the
+code section. That is, Code RAM and Data RAM are the same physical
+memory:
+
+| From         |        | To           | Size   |          |
+|--------------+--------+--------------+--------+----------|
+|              |        | 0x 3FFF FFFF |        |          |
+| 0x 2000 0000 | 0      | 0x 2002 0000 | 128 kB | Data RAM |
+|--------------+--------+--------------+--------+----------|
+
+There are nRF52833 peripheral registers from 0x40000000 and also from
+0x50000000.
+
+*** Peripherals
+
+Here is a brief list of the nRF52833 peripherals. A peripheral number
+id is assigned 2^10 32 bit registers starting at
+0x40000000 + id x 0x1000 (except that apparently two peripherals may
+share the same id). 
+
+Peripherals receive "tasks" (from the PPI q.v., or from themselves, or
+from events they generate). Peripherals generate events, and events
+may trigger interrupts. The interrupt number (in the NVIC table)
+triggered by a particular peripheralis the same as the peripheralid.
+
+There's a thing called "Programmable Peripheral Interconnect" which
+allows peripherals to talk to each other without CPU involvement. I
+think this is what "tasks and events" are about.
+
+|        |       id |                                      |                             |
+|--------+----------+--------------------------------------+-----------------------------|
+| AAR    |      0xF | Accelerated address resolver         | For Bluetooth               |
+| ACL    |      0xE | Access control lists                 | Flash memory regions        |
+| CCM    |      0xF | AES CCM encryption                   | For Bluetooth               |
+| COMP   |      0x3 | Comparator                           |                             |
+| ECB    |      0xE | Electronic Code Book                 | For Bluetooth               |
+| EGU    | 0x4--0x9 | Event Generator Unit(s)              |                             |
+| GPIO   |          | General purpose IO                   |                             |
+| GPIOTE |          | GPIO tasks and events                |                             |
+| I2S    |          | Inter-IC sound interface             |                             |
+| LPCOMP |          | Low power comparator                 |                             |
+| MWU    |          | Memory watch unit                    |                             |
+| NFCT   |          | Near-field communication tag         |                             |
+| PDM    |          | Pulse density modulation             | For input                   |
+| PPI    |          | Programmable peripheral interconnect |                             |
+| PWM    |          | Pulse width modulation               | For output                  |
+| QDEC   |          | Quadrature decoder                   | For mechanical sensor input |
+| RADIO  |          | 2.4 GHz radio                        |                             |
+| RNG    |          | (True) random number generator       |                             |
+| RTC    |          | Real-time counter                    |                             |
+| SAADC  |          | Analogue to digital converter        |                             |
+| SPI    |          | Serial peripheral interface          |                             |
+| SWI    |          | Software interrupts                  |                             |
+| TEMP   |          | Temperature sensor                   |                             |
+| TWI    |          | I2C two-wire interface               |                             |
+| TIMER  |          | Timer / counter                      |                             |
+| UART   |          | Universal async Rx/Tx                |                             |
+| USBD   |          | USB device                           |                             |
+| WDT    |          | Watchdog timer                       |                             |
+
+
+
+** Microbit
+
+The microbit, in addition to the nRF52833, has an additional SoC (a
+Cortex M0+ in v1, another M4 in v2) whose job is to manage the USB
+connection. It presents the flash memory of the main processor as a
+USB mass storage device, exposes the main processor's UART interface
+over USB, and allows debugging.
+
+
+
+
