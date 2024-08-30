@@ -2,10 +2,14 @@
 #+author: The Hut23 Compiler Club
 #+options: toc:nil num:nil
 
-* How to create this document
+Asterisk: \ast
+\alpha, \beta, \gamma
 
-This file explains (and is also the source of) the linker script we
-have developed for the micro:bit version 2, at least as far as we have
+
+* How to create the linker script
+
+This file explains and is also the source of the linker script we have
+developed for the micro:bit version 2, at least as far as we have
 developed it, which is currently not very far.
 
 To extract (or “tangle,” in literate-programming parlance) the script
@@ -20,13 +24,15 @@ machine, but it's a start ...
 The linker script is read by the linker (use the option “​~-T
 microbit-v2.ld~​”). The main job of the linker script is:
 
+In addition, the script might export names (or “symbols”) with which
+to access particular memory locations. Here is the overall structure
+of our overall script:
+
 1. To describe the memory layout of the microbit; and
 2. To arrange for the various “sections” of the program to end up in
    the correct places in memory in the output object file.
 
-In addition, the script might export names (or “symbols”) with which
-to access particular memory locations. Here is our overall script, in
-the file ~microbit-v2.ld~:
+#+ATTR_LATEX: :float nil
 #+name: Linker Script
 #+begin_src ld-script :noweb-sep "arg" :tangle ./out/microbit-v2.ld
   /* 
@@ -36,10 +42,10 @@ the file ~microbit-v2.ld~:
   */
 
   <<Memory layout>>
-  
   <<Input and output sections>>
 #+end_src
 
+Each of the two parts is expanded below.
 
 * Explanation of each part
 :PROPERTIES:
@@ -49,12 +55,13 @@ the file ~microbit-v2.ld~:
 ** Memory layout 
 
 The Cortex M4 is a 32-bit CPU, meaning that it can in principle
-address $2^{32}$ bytes---or 4 GiB---of memory. However, the nRF52833
+address \(2^{32}\) bytes---or 4 GiB---of memory. However, the nRF52833
 physically has only 512 kiB of flash memory and 128 kiB of RAM. The
 mapping of that physical memory into the 4 GiB of “virtual” memory
 space is described in the nRF52833 product specification (section
 4.2.3, figure 3).
 
+#+ATTR_LATEX: :float nil
 #+name: Memory layout
 #+caption: Memory layout of the Nordic nRF528333
 #+begin_src ld-script
@@ -79,11 +86,10 @@ that this can be faster if one is executing code. However, the rest of
 this linker script ignores the code RAM.
 
 There are other bits of memory---for example, the memory-mapped
-peripheral registers---but (I think) we don't need to write them down
-here because the linker doesn't need to arrange data to fit in those
-areas. Instead, they are at fixed, known, locations, and therefore the
-convention is to specify them in a startup file, either C or
-assembly.
+peripheral registers, and some non-volatile configuration memory
+regions---but I am unsure whether we should write that down here or
+not. That does not seem to be the done thing but I am not entirely
+sure why not.
 
 ** Input and output sections
 
@@ -134,9 +140,10 @@ actually sure the output names matter). The contents of the ~.text~
 section will end up in flash memory and the contents of the ~.data~
 and ~.bss~ sections will (eventually) end up in RAM. [fn:1]
 
+#+ATTR_LATEX: :float nil
 #+name: Output sections
 #+caption: Output sections
-#+begin_src ld-script 
+#+begin_src ld-script
   SECTIONS {
     <<text output section>>
     <<data output section>>
@@ -146,6 +153,10 @@ and ~.bss~ sections will (eventually) end up in RAM. [fn:1]
 
 *** Text output section
 
+The ~.text~ output section gathers together all the parts of the input
+that will end up in flash memory.
+
+#+ATTR_LATEX: :float nil
 #+name: text output section
 #+caption: Text output section
 #+begin_src ld-script 
@@ -156,8 +167,21 @@ and ~.bss~ sections will (eventually) end up in RAM. [fn:1]
     } >FLASH
 #+end_src
 
+Each line of this part of the script specifies a set of input
+sections: those matching the pattern in the line. For example, the
+pattern src_ld-script{*(.text*)} matches all input files (that's the
+first asterisk) and, within those, all sections whose name begin with
+`src_ld-script{.text}' (that's the second asterisk). [fn:2]
+
+The initial input section, the interrupt-vectors table, will be
+defined in another file (probably an assembly file). It is wrapped in
+“KEEP” because, as I understand it, the linker may choose to omit (or
+“garbage collect”) sections that don't appear to be referenced by the
+main sections.
+
 *** Data output section
 
+#+ATTR_LATEX: :float nil
 #+name: data output section
 #+caption: Data output section
 #+begin_src ld-script 
@@ -166,8 +190,17 @@ and ~.bss~ sections will (eventually) end up in RAM. [fn:1]
     } >FLASH
 #+end_src
 
+The data section is tricky. It needs to say, “arrange for the data in
+the input section to be placed in the ~FLASH~ section of memory;
+however, whenever any of the addresses in that section are
+/referenced/ by the output file, ensure those references point to a
+parallel section in ~RAM~.
+
+
+
 *** BSS output section
 
+#+ATTR_LATEX: :float nil
 #+name: bss output section
 #+caption: BSS output section
 #+begin_src ld-script 
@@ -198,12 +231,26 @@ table.
 
 * Sources
 
- [[../reference/SoC/nRF52833_PS_v1.7.pdf][nRF52833 product specification]] 
+I have taken much of the memory layout from the [[../reference/SoC/nRF52833_PS_v1.7.pdf][nRF52833 product
+specification]]. 
 
+Both Arm and Nordic Semiconductor produce example linker scripts (and
+startup files):
 
- [[https://sourceware.org/binutils/docs/ld/index.html][GNU ~ld~ manual]] 
+- For Arm, there is a GitHub repo called [[https://github.com/ARM-software/CMSIS_6][CMSIS]] (for “Common
+  Microcontroller Software Interface Standard”). There is a linker
+  script in [[https://github.com/ARM-software/CMSIS_6/tree/main/CMSIS/Core/Template/Device_M/Config][~CMSIS/Core/Template/Device_M/Config/Device_gcc.ld~]].
+
+- Nordic publish a repo called [[https://github.com/NordicSemiconductor/nrfx][nrfx]]. There is an nRF52833-specific
+  linker script in [[https://github.com/NordicSemiconductor/nrfx/tree/master/mdk][~mdk/nrf52833_xxaa.ld~]] (in fact, there is a /lot/
+  of nRF528333-specific information in that directory).
+
+The [[https://sourceware.org/binutils/docs/ld/index.html][GNU ~ld~ manual]] explains the meanings of the various parts of the
+linker script. 
 
 * Footnotes
+[fn:2] GCC emits multiple text sections when the option
+~-ffunction-sections~ is used.
 
 [fn:1] The example linker script provided by Nordic Semiconductor
 breaks out more of the input sections into their own output
