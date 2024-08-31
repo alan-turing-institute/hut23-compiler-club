@@ -2,10 +2,6 @@
 #+author: The Hut23 Compiler Club
 #+options: toc:nil num:nil
 
-Asterisk: \ast
-\alpha, \beta, \gamma
-
-
 * How to create the linker script
 
 This file explains and is also the source of the linker script we have
@@ -46,6 +42,7 @@ of our overall script:
 #+end_src
 
 Each of the two parts is expanded below.
+
 
 * Explanation of each part
 :PROPERTIES:
@@ -186,17 +183,15 @@ main sections.
 #+caption: Data output section
 #+begin_src ld-script 
     .data : {
-      
-    } >FLASH
+      *(.data*)
+    } >RAM >AT FLASH
 #+end_src
 
-The data section is tricky. It needs to say, “arrange for the data in
-the input section to be placed in the ~FLASH~ section of memory;
-however, whenever any of the addresses in that section are
-/referenced/ by the output file, ensure those references point to a
-parallel section in ~RAM~.
-
-
+The data section is tricky. It needs to say something like, “this
+section should be loaded into flash memory but /look/ as if it is
+present in RAM, in the sense that, whenever any of the addresses in
+this section are /referenced/, those references should point to the
+section in ~RAM~.” That's what “src_ld-script{>RAM >AT FLASH}” does.
 
 *** BSS output section
 
@@ -205,7 +200,7 @@ parallel section in ~RAM~.
 #+caption: BSS output section
 #+begin_src ld-script 
     .bss : {
-      
+    
     } >FLASH
 #+end_src
 
@@ -228,10 +223,14 @@ the CPU knows what code to run when interrupts happen.) So we should
 at the very least have reserved space for nested vector interrupt
 table.
 
+* What is missing?
+
+1. Exported symboles.
+   
 
 * Sources
 
-I have taken much of the memory layout from the [[../reference/SoC/nRF52833_PS_v1.7.pdf][nRF52833 product
+I have taken the memory layout from the [[../reference/SoC/nRF52833_PS_v1.7.pdf][nRF52833 product
 specification]]. 
 
 Both Arm and Nordic Semiconductor produce example linker scripts (and
@@ -245,8 +244,12 @@ startup files):
   linker script in [[https://github.com/NordicSemiconductor/nrfx/tree/master/mdk][~mdk/nrf52833_xxaa.ld~]] (in fact, there is a /lot/
   of nRF528333-specific information in that directory).
 
+Those files contain many more sections, partly to support C++ and
+partly for other reasons I don't understand.
+
 The [[https://sourceware.org/binutils/docs/ld/index.html][GNU ~ld~ manual]] explains the meanings of the various parts of the
 linker script. 
+
 
 * Footnotes
 [fn:2] GCC emits multiple text sections when the option

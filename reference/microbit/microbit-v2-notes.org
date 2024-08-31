@@ -1,11 +1,16 @@
-#+title: Notes on the Micro:bit v2.
+#+title: Notes on the micro:bit v2.
 
 These are JG's notes on the configuration of the v2 micro:bit.
 
 ** Sizes
 
-2^32 bytes is 4 GB. 
+2^32 bytes is 4 GiB.  
 
+| Size  |      | Hexadecimal  |
+|-------+------+--------------|
+| 1 kiB | 2^10 | 0x 0000 4000 |
+| 1 MiB | 2^20 | 0x 0010 0000 |
+| 1 GiB | 2^30 | 0x 4000 0000 |
 
 ** Processor
 
@@ -49,7 +54,7 @@ The following map of the available address space is in 0.5 GiB chunks.
 
 | From         | GiB | To           | Size    |                        |
 |--------------+-----+--------------+---------+------------------------|
-| 0x E010 0000 |     | 0x FFF FFFFF | 511 MiB | Vendor-specific memory |
+| 0x E010 0000 |     | 0x FFFF FFFF | 511 MiB | Vendor-specific memory |
 | 0x E000 0000 | 3.5 | 0x E00F FFFF | 1 MiB   | Private peripheral bus |
 |--------------+-----+--------------+---------+------------------------|
 | 0x A000 0000 | 2.5 | 0x DFFF FFFF | 1.0 GiB | External device        |
