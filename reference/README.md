@@ -1,17 +1,19 @@
 # Technical reference material for the micro:bit v2 hardware
 
-## Documenation
+## Documentation
 
 - `cpu`: Arm documentation for the Cortex M4 (note that their
   developer website does not appear to load in Firefox)
-  - [Datasheet](./reference/cpu/Arm-Cortex-M4-Processor-Datasheet.pdf)
+  - [Datasheet](./cpu/Arm-Cortex-M4-Processor-Datasheet.pdf)
     (and [web version](https://developer.arm.com/documentation/102832/0100/?lang=en))
-  - [Generic User Guide](./reference/cpu/cortex-m4-gug.pdf)
+  - [Generic User Guide](./cpu/cortex-m4-gug.pdf)
     (and [web version](https://developer.arm.com/documentation/dui0553/b/?lang=en))
-  - [Technical Reference Manual](./reference/cpu/cortex-m4-trm.pdf)
+  - [Technical Reference Manual](./cpu/cortex-m4-trm.pdf)
     (and [web version](https://developer.arm.com/documentation/100166/0001/?lang=en))
   - [Arm v7-M Architecture Reference
-    Manual](./reference/cpu/armv7m-arch-ref.pdf) (and [web version](https://developer.arm.com/documentation/ddi0403/ee/?lang=en))	
+    Manual](./cpu/armv7m-arch-ref.pdf) (and [web version](https://developer.arm.com/documentation/ddi0403/ee/?lang=en))	
+  - [Procedure Call
+    Standard](./cpu/aapcs32.pdf) (and [html version](https://github.com/ARM-software/abi-aa/blob/main/aapcs32/aapcs32.rst))
 
 - `SoC`: Documentation for the nRF52833 system-on-a-chip
   - [nRF52833 Product Specification](./SoC/nRF52833_PS_v1.7/pdf) (and
@@ -32,4 +34,4 @@
   system. 
 - [Arm
   CMSIS](https://arm-software.github.io/CMSIS_6/latest/General/index.html)
-  (Common Microcontroller Interface Standard) (and [GitHub repo](https://github.com/ARM-software/CMSIS_6)).
+  Common Microcontroller Interface Standard (and [GitHub repo](https://github.com/ARM-software/CMSIS_6)).
