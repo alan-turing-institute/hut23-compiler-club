@@ -8,9 +8,9 @@
     (and [web version](https://developer.arm.com/documentation/102832/0100/?lang=en))
   - [Generic User Guide](./cpu/cortex-m4-gug.pdf) (and [web version](https://developer.arm.com/documentation/dui0553/b/?lang=en))
   - [Arm instruction set quick reference](./cpu/QRC0001_UAL.pdf)
-  - [Arm assembler user guide](./cpu/ARMCT_armasm_reference_guide_v6_01_DUI0802B_en.pdf)
+  - [Arm assembler user guide](./cpu/armasm_user_guide_DUI0801_l_en.pdf)
     (and [html
-    version](https://developer.arm.com/documentation/dui0801/l/?lang=en).
+    version](https://developer.arm.com/documentation/dui0801/l/?lang=en)).
     We're using the GNU assembler but chapter 7 onwards explains the
     instruction set in detail.
   - [Technical Reference Manual](./cpu/cortex-m4-trm.pdf)
