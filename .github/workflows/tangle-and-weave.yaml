@@ -12,6 +12,6 @@ jobs:
         with:
           version: 29.1
       - name: Tangle files
-         run: |
-           pushd our-startup-files
-	   make
+        run: |
+          pushd our-startup-files
+	  make
