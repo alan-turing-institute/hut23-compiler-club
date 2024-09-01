@@ -6,12 +6,17 @@
   developer website does not appear to load in Firefox)
   - [Datasheet](./cpu/Arm-Cortex-M4-Processor-Datasheet.pdf)
     (and [web version](https://developer.arm.com/documentation/102832/0100/?lang=en))
-  - [Generic User Guide](./cpu/cortex-m4-gug.pdf)
-    (and [web version](https://developer.arm.com/documentation/dui0553/b/?lang=en))
+  - [Generic User Guide](./cpu/cortex-m4-gug.pdf) (and [web version](https://developer.arm.com/documentation/dui0553/b/?lang=en))
+  - [Arm instruction set quick reference](./cpu/QRC0001_UAL.pdf)
+  - [Arm assembler user guide](./cpu/ARMCT_armasm_reference_guide_v6_01_DUI0802B_en.pdf)
+    (and [html
+    version](https://developer.arm.com/documentation/dui0801/l/?lang=en).
+    We're using the GNU assembler but chapter 7 onwards explains the
+    instruction set in detail.
   - [Technical Reference Manual](./cpu/cortex-m4-trm.pdf)
     (and [web version](https://developer.arm.com/documentation/100166/0001/?lang=en))
   - [Arm v7-M Architecture Reference
-    Manual](./cpu/armv7m-arch-ref.pdf) (and [web version](https://developer.arm.com/documentation/ddi0403/ee/?lang=en))	
+    Manual](./cpu/armv7m-arch-ref.pdf) (and [web version](https://developer.arm.com/documentation/ddi0403/ee/?lang=en))
   - [Procedure Call
     Standard](./cpu/aapcs32.pdf) (and [html version](https://github.com/ARM-software/abi-aa/blob/main/aapcs32/aapcs32.rst))
 
