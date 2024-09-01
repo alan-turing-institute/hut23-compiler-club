@@ -14,4 +14,5 @@ jobs:
       - name: Tangle files
         run: |
           pushd our-startup-files
+          rm ./out/*
           make
