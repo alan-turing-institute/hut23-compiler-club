@@ -1,5 +1,5 @@
 :PROPERTIES:
-:header-args: :noweb no-export :exports code :padline yes
+:header-args: :noweb yes :exports code :padline yes
 :END:
 #+title: Our BBC micro:bit v2 linker script
 #+author: The Hut23 Compiler Club
@@ -12,8 +12,8 @@ developed for the micro:bit version 2, at least as far as we have
 developed it, which is currently not very far.
 
 To extract (or “tangle,” in literate-programming parlance) the script
-itself, run ~make~ in this directory. That probably won't work on your
-machine, but it's a start ...
+itself, run ~make~ in this directory. (You will need emacs to be
+installed.)
 
 
 * Overview
@@ -48,7 +48,7 @@ Here is the overall structure of our script:
 
 #+ATTR_LATEX: :float nil
 #+name: Linker Script
-#+begin_src ld-script :tangle ./out/microbit-v2.ld 
+#+begin_src ld :tangle ./out/microbit-v2.ld 
   /* 
   BBC micro:bit v2 linker script
   Written by the Hut23 Compiler Club
@@ -77,7 +77,7 @@ space is described by the first part of the linker script.
 #+ATTR_LATEX: :float nil
 #+name: 1. Memory layout
 #+caption: Memory layout of the Nordic nRF528333
-#+begin_src ld-script
+#+begin_src ld
 MEMORY {
   FLASH    (rx) : ORIGIN = 0x00000000, LENGTH = 512K  
   RAM      (wx) : ORIGIN = 0x20000000, LENGTH = 128K
@@ -161,7 +161,7 @@ understanding is that they will be placed in the output file
 #+ATTR_LATEX: :float nil
 #+name: 2. Input and output sections
 #+caption: Output sections
-#+begin_src ld-script
+#+begin_src ld
   SECTIONS {
     <<2.1 text output section>>
     <<2.2 data output section>>
@@ -177,7 +177,7 @@ that will end up in flash memory.
 #+ATTR_LATEX: :float nil
 #+name: 2.1 text output section
 #+caption: Text output section
-#+begin_src ld-script 
+#+begin_src ld 
     .text : {
       KEEP(*(.vectors))
       *(.text*)
@@ -201,7 +201,7 @@ main sections.
 #+ATTR_LATEX: :float nil
 #+name: 2.2 data output section
 #+caption: Data output section
-#+begin_src ld-script 
+#+begin_src ld 
     .data : ALIGN(4) {
       __data_start = .;
       *(.data)
@@ -232,7 +232,7 @@ src_ld-script{ALIGN} seems to be the norm.
 #+ATTR_LATEX: :float nil
 #+name: 2.3 bss output section
 #+caption: BSS output section
-#+begin_src ld-script 
+#+begin_src ld 
   .bss : ALIGN(4) {
     __bss_start = .;
     *(.bss)
