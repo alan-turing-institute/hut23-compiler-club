@@ -18,16 +18,33 @@ machine, but it's a start ...
 
 * Overview
 
-The linker script is read by the linker (use the option “​~-T
-microbit-v2.ld~​”). The main job of the linker script is:
+The input to the linker (eg, GNU ~ld~) is a set of files, known as
+/object files/, containing code (in binary format) and data. The job
+of the linker is to combine all the code and data in the input files
+into a single output file, also known as an object file, that can be
+loaded into a particular region of memory (or, in our case, flashed
+onto the micro:bit).
 
-1. To describe the memory layout of the microbit; and
-2. To arrange for the various “sections” of the program to end up in
+However, when input object files are generated, for example by a C
+compiler or an assembler, their final location in memory is not
+known. Thus the files contain, not hard-coded memory locations, but
+/symbols/: stand-ins for the final location of code or data. Each
+symbol is defined in one of the input files to point to a particular
+part of the data, or code, in that input file. The linker must decide
+what final location each symbol refers to and arrange for all the
+references to that symbol, in whatever file the reference occurs, to
+refer to that location.
+
+The linker script is a configuration file read by the linker (use the
+option “​~-T microbit-v2.ld~​”). The purpose of the linker script is:
+
+1. To describe the memory layout of the micro:bit; 
+2. To arrange for the various “sections” of code and data to end up in
    the correct places in memory in the output object file.
+3. To name particular locations in memory that can only be decided at
+   link time but which are referenced by the code.
 
-In addition, the script might export names (or “symbols”) with which
-to access particular memory locations. Here is the overall structure
-of our overall script:
+Here is the overall structure of our script:
 
 #+ATTR_LATEX: :float nil
 #+name: Linker Script
