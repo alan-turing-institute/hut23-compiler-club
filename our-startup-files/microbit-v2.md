@@ -37,7 +37,7 @@ option “​`-T microbit-v2.ld`​”). The purpose of the linker script is:
 
 Here is the overall structure of our script:
 
-``` ld-script
+``` ld
 /* 
 BBC micro:bit v2 linker script
 Written by the Hut23 Compiler Club
@@ -70,7 +70,7 @@ Memory layout of the Nordic nRF528333
 
 </div>
 
-``` ld-script
+``` ld
 MEMORY {
   FLASH    (rx) : ORIGIN = 0x00000000, LENGTH = 512K  
   RAM      (wx) : ORIGIN = 0x20000000, LENGTH = 128K
@@ -164,7 +164,7 @@ Output sections
 
 </div>
 
-``` ld-script
+``` ld
 SECTIONS {
   <<2.1 text output section>>
   <<2.2 data output section>>
@@ -187,7 +187,7 @@ Text output section
 
 </div>
 
-``` ld-script
+``` ld
 .text : {
   KEEP(*(.vectors))
   *(.text*)
@@ -201,12 +201,12 @@ Each line of this part of the script specifies a set of input sections;
 namely, those matching the pattern in the line. For example, the pattern
 `*(.text*)` matches all input files (that's the first asterisk) and,
 within those, all sections whose name begin with
-\`src<sub>ld</sub>-script{.text}' (that's the second asterisk). [^3]
+\`src<sub>ld</sub>{.text}' (that's the second asterisk). [^3]
 
-The interrupt vectors section is wrapped in
-“src<sub>ld</sub>-script{KEEP}” because, as I understand it, the linker
-may choose to omit (or “garbage collect”) sections that don't appear to
-be referenced by the main sections.
+The interrupt vectors section is wrapped in “src<sub>ld</sub>{KEEP}”
+because, as I understand it, the linker may choose to omit (or “garbage
+collect”) sections that don't appear to be referenced by the main
+sections.
 
 ### 2.2 Data output section
 
@@ -218,7 +218,7 @@ Data output section
 
 </div>
 
-``` ld-script
+``` ld
 .data : ALIGN(4) {
   __data_start = .;
   *(.data)
@@ -233,8 +233,8 @@ The data section is tricky. It needs to say something like, “these input
 sections should be loaded into flash memory but *look* as if it they are
 present in RAM, in the sense that, whenever any of the addresses in
 these sections are referenced, those references should point to the
-section in `RAM`.” That's what “src<sub>ld</sub>-script{\>RAM AT
-\>FLASH}” does. [^4]
+section in `RAM`.” That's what “src<sub>ld</sub>{\>RAM AT \>FLASH}”
+does. [^4]
 
 I'm not sure why the two data lines aren't a single line, `*(.data*)`,
 but this is what the Arm example linker script does so I have copied it.
@@ -255,7 +255,7 @@ BSS output section
 
 </div>
 
-``` ld-script
+``` ld
 .bss : ALIGN(4) {
   __bss_start = .;
   *(.bss)
