@@ -1,0 +1,14 @@
+name: "Org-mode export"
+on: [push]
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repo
+        uses: actions/checkout@v4
+      - name: Tangle org files
+        uses: tecosaur/org-knit-action@v0.3
+        with:
+	  github_token: ${{ secrets.GITHUB_TOKEN }}
+	  tangle: [our-startup-files/microbit-v2.org]
