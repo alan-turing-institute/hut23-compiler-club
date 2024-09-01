@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-09-01 Sun 13:44 -->
+<!-- 2024-09-01 Sun 13:50 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Notes on the micro:bit v2.</title>
@@ -247,20 +247,20 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgbac5fe2">1. Sizes</a></li>
-<li><a href="#org3d56bac">2. Processor</a>
+<li><a href="#org5b93a3f">1. Sizes</a></li>
+<li><a href="#org6e168d3">2. Processor</a>
 <ul>
-<li><a href="#org09b6746">2.1. Memory</a></li>
-<li><a href="#orgf7838d8">2.2. Reset</a></li>
+<li><a href="#org6956bea">2.1. Memory</a></li>
+<li><a href="#orgbc12280">2.2. Reset</a></li>
 </ul>
 </li>
-<li><a href="#org4dbb746">3. System on a chip</a>
+<li><a href="#orgf01f3df">3. System on a chip</a>
 <ul>
-<li><a href="#orgde87c2b">3.1. Memory</a></li>
-<li><a href="#org8c3809d">3.2. Peripherals</a></li>
+<li><a href="#org14c997d">3.1. Memory</a></li>
+<li><a href="#orgbc0c54b">3.2. Peripherals</a></li>
 </ul>
 </li>
-<li><a href="#org2eac615">4. Microbit</a></li>
+<li><a href="#orgbd4b921">4. Microbit</a></li>
 </ul>
 </div>
 </div>
@@ -268,8 +268,8 @@ for the JavaScript code in this tag.
 These are JG's notes on the configuration of the v2 micro:bit.
 </p>
 
-<div id="outline-container-orgbac5fe2" class="outline-2">
-<h2 id="orgbac5fe2"><span class="section-number-2">1</span> Sizes</h2>
+<div id="outline-container-org5b93a3f" class="outline-2">
+<h2 id="org5b93a3f"><span class="section-number-2">1</span> Sizes</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 2<sup>32</sup> bytes is 4 GiB.  
@@ -315,8 +315,8 @@ These are JG's notes on the configuration of the v2 micro:bit.
 </div>
 </div>
 
-<div id="outline-container-org3d56bac" class="outline-2">
-<h2 id="org3d56bac"><span class="section-number-2">2</span> Processor</h2>
+<div id="outline-container-org6e168d3" class="outline-2">
+<h2 id="org6e168d3"><span class="section-number-2">2</span> Processor</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 The processor is an Arm Cortex M4F (the F means with floating-point
@@ -456,8 +456,8 @@ Guide; Arm Cortex M4 Technical Reference Manual; nRF52833 Product Specification.
 </p>
 </div>
 
-<div id="outline-container-org09b6746" class="outline-3">
-<h3 id="org09b6746"><span class="section-number-3">2.1</span> Memory</h3>
+<div id="outline-container-org6956bea" class="outline-3">
+<h3 id="org6956bea"><span class="section-number-3">2.1</span> Memory</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 The following map of the available address space is in 0.5 GiB chunks.
@@ -558,8 +558,8 @@ core peripheral registers (those in the CPU); the memory starting at
 </div>
 </div>
 
-<div id="outline-container-orgf7838d8" class="outline-3">
-<h3 id="orgf7838d8"><span class="section-number-3">2.2</span> Reset</h3>
+<div id="outline-container-orgbc12280" class="outline-3">
+<h3 id="orgbc12280"><span class="section-number-3">2.2</span> Reset</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 On reset:
@@ -580,16 +580,16 @@ which is at address 0x04.</li>
 </div>
 
 
-<div id="outline-container-org4dbb746" class="outline-2">
-<h2 id="org4dbb746"><span class="section-number-2">3</span> System on a chip</h2>
+<div id="outline-container-orgf01f3df" class="outline-2">
+<h2 id="orgf01f3df"><span class="section-number-2">3</span> System on a chip</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 The SoC is a Nordic Semiconductor nRF52833. 
 </p>
 </div>
 
-<div id="outline-container-orgde87c2b" class="outline-3">
-<h3 id="orgde87c2b"><span class="section-number-3">3.1</span> Memory</h3>
+<div id="outline-container-org14c997d" class="outline-3">
+<h3 id="org14c997d"><span class="section-number-3">3.1</span> Memory</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 The nRF52833 has 128 kB of RAM and 512 kB of Flash. 
@@ -730,8 +730,8 @@ There are nRF52833 peripheral registers from 0x40000000 and also from
 </div>
 </div>
 
-<div id="outline-container-org8c3809d" class="outline-3">
-<h3 id="org8c3809d"><span class="section-number-3">3.2</span> Peripherals</h3>
+<div id="outline-container-orgbc0c54b" class="outline-3">
+<h3 id="orgbc0c54b"><span class="section-number-3">3.2</span> Peripherals</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 Here is a brief list of the nRF52833 peripherals. A peripheral number
@@ -977,8 +977,8 @@ think this is what "tasks and events" are about.
 
 
 
-<div id="outline-container-org2eac615" class="outline-2">
-<h2 id="org2eac615"><span class="section-number-2">4</span> Microbit</h2>
+<div id="outline-container-orgbd4b921" class="outline-2">
+<h2 id="orgbd4b921"><span class="section-number-2">4</span> Microbit</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The microbit, in addition to the nRF52833, has an additional SoC (a
@@ -992,7 +992,7 @@ over USB, and allows debugging.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Docker image runner</p>
-<p class="date">Created: 2024-09-01 Sun 13:44</p>
+<p class="date">Created: 2024-09-01 Sun 13:50</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
