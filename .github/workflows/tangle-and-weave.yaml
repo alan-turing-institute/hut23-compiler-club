@@ -10,5 +10,5 @@ jobs:
       - name: Tangle org files
         uses: tecosaur/org-knit-action@v0.3
         with:
-	  github_token: ${{ secrets.GITHUB_TOKEN }}
-	  tangle: yes
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tangle: [our-startup-files/microbit-v2.org]
