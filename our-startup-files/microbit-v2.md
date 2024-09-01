@@ -4,9 +4,9 @@ This file explains and is also the source of the linker script we have
 developed for the micro:bit version 2, at least as far as we have
 developed it, which is currently not very far.
 
-To extract (or "tangle," in literate-programming parlance) the script
-itself, run `make` in this directory. That probably won\'t work on your
-machine, but it\'s a start ...
+To extract (or “tangle,” in literate-programming parlance) the script
+itself, run `make` in this directory. That probably won't work on your
+machine, but it's a start …
 
 # Overview
 
@@ -27,17 +27,17 @@ each symbol refers to and arrange for all the references to that symbol,
 in whatever file the reference occurs, to refer to that location.
 
 The linker script is a configuration file read by the linker (use the
-option "​`-T microbit-v2.ld`​"). The purpose of the linker script is:
+option “​`-T microbit-v2.ld`​”). The purpose of the linker script is:
 
 1.  To describe the memory layout of the micro:bit;
-2.  To arrange for the various "sections" of code and data to end up in
+2.  To arrange for the various “sections” of code and data to end up in
     the correct places in memory in the output object file.
 3.  To name particular locations in memory that can only be decided at
     link time but which are referenced by the code.
 
 Here is the overall structure of our script:
 
-``` {#Linker Script .ld-script tangle="./out/microbit-v2.ld"}
+``` ld-script
 /* 
 BBC micro:bit v2 linker script
 Written by the Hut23 Compiler Club
@@ -56,27 +56,31 @@ Each part is expanded below.
 ## 1. Memory layout
 
 The Cortex M4 is a 32-bit CPU, meaning that it can in principle address
-$2^{32}$ bytes---or 4 GiB---of memory. However, the nRF52833 physically
-has only 512 kiB of flash memory and 128 kiB of RAM (see section 4.2.3,
+$2^{32}$ bytes—or 4 GiB—of memory. However, the nRF52833 physically has
+only 512 kiB of flash memory and 128 kiB of RAM (see section 4.2.3,
 figure 3, of the nRF52833 product specification). The mapping of that
-physical memory into the 4 GiB of "virtual" memory space is described by
+physical memory into the 4 GiB of “virtual” memory space is described by
 the first part of the linker script.
 
-:::: captioned-content
-::: caption
-Memory layout of the Nordic nRF528333
-:::
+<div class="captioned-content">
 
-``` {#1. Memory layout .ld-script}
+<div class="caption">
+
+Memory layout of the Nordic nRF528333
+
+</div>
+
+``` ld-script
 MEMORY {
   FLASH    (rx) : ORIGIN = 0x00000000, LENGTH = 512K  
   RAM      (wx) : ORIGIN = 0x20000000, LENGTH = 128K
   CODE_RAM (wx) : ORIGIN = 0x00800000, LENGTH = 128K 
 }
 ```
-::::
 
-(By the way, every linker file I\'ve seen writes the attributes of the
+</div>
+
+(By the way, every linker file I've seen writes the attributes of the
 RAM section as `rwx` rather than (as here) just `wx`. However, the GNU
 `ld` manual (section 3.8) clearly says that the attribute `w` means read
 *and* write.)
@@ -84,21 +88,20 @@ RAM section as `rwx` rather than (as here) just `wx`. However, the GNU
 On this device the 128 kiB of physical RAM is mapped *both* to the
 normal location (labelled as `RAM`) and *also* to an area of memory just
 above the flash memory. This `CODE_RAM` is the same physical RAM, just
-accessible from two different places in "memory." The reason seems to be
+accessible from two different places in “memory.” The reason seems to be
 that the CPU accesses this memory on a different bus and that this can
 be faster if one is executing code. However, the rest of this linker
 script ignores the code RAM.
 
-There are other bits of memory---for example, the memory-mapped
-peripheral registers, and some non-volatile configuration memory
-regions---but I am unsure whether we should write that down here or not.
-That does not seem to be the done thing but I am not entirely sure why
-not.
+There are other bits of memory—for example, the memory-mapped peripheral
+registers, and some non-volatile configuration memory regions—but I am
+unsure whether we should write that down here or not. That does not seem
+to be the done thing but I am not entirely sure why not.
 
 ## 2. Input and output sections
 
-The content of the linker's input files and output file are assigned to
-regions called "sections." One job of the linker is to map the sections
+The content of the linker’s input files and output file are assigned to
+regions called “sections.” One job of the linker is to map the sections
 in the input files to the sections in the output file and to write in
 the output file where the output sections are to end up in memory.
 
@@ -106,22 +109,22 @@ There are four conventional input sections produced, for example, by the
 C compiler, which will be the input sections to the linker. (There may
 be others but these seem to be the critical ones.) They are:
 
-`.text`
-:   which holds code;
+`.text`  
+which holds code;
 
-`.rodata`
-:   wihch holds data that will never be modified by the program.
+`.rodata`  
+wihch holds data that will never be modified by the program.
 
-`.data`
-:   which holds "initialised data," that is, data that starts with a
-    given value; and
+`.data`  
+which holds “initialised data,” that is, data that starts with a given
+value; and
 
-`.bss`
-:   which holds "uninitialised data," that is, data that is supposed to
-    start off as zero.
+`.bss`  
+which holds “uninitialised data,” that is, data that is supposed to
+start off as zero.
 
-No-one remembers what "BSS" stands for. Some people read it as "better
-save space." In some sense the `.bss` section is unnecessary: data in
+No-one remembers what “BSS” stands for. Some people read it as “better
+save space.” In some sense the `.bss` section is unnecessary: data in
 this section is supposed to be initialised to zero before the program
 begins so it could have been placed in the `.data` section. However, the
 output file can be made smaller by not storing the actual zeros but
@@ -133,78 +136,89 @@ write code to do this, as well).
 
 There is one other input section, `.vectors`, which is not populated by
 the C compiler but by a small piece of startup code (which we need to
-write). It holds the "interrupt vector table," a list of pointers to
+write). It holds the “interrupt vector table,” a list of pointers to
 code that is to be called by the hardware when various hardware events
-happen. (I think this is "vector" in the sense of "pointer to
-something," rather than the sense of "one-dimensional array:" it is a
+happen. (I think this is “vector” in the sense of “pointer to
+something,” rather than the sense of “one-dimensional array:” it is a
 table of interrupt-vectors, not a vector of interrupts.) The way the CPU
 gets started, after a reset, is first to load the stack pointer with the
 address found in the four bytes at the beginning of the interrupt vector
 table, and then to jump to the address in the following four bytes.
 
 All of these input sections will be grouped by this linker script into
-three output sections: `.text`, `.data`, and `.bss` (although I\'m not
+three output sections: `.text`, `.data`, and `.bss` (although I'm not
 actually sure the output names matter). The contents of the `.text`
 section will end up in flash memory and the contents of the `.data` and
 `.bss` sections will (eventually) end up in RAM. [^1]
 
 If the input files contain other sections not specified in this script
-(called "orphaned sections" by the GNU `ld` reference) then my
+(called “orphaned sections” by the GNU `ld` reference) then my
 understanding is that they will be placed in the output file *somewhere*
 by the linker anyway. [^2]
 
-:::: captioned-content
-::: caption
-Output sections
-:::
+<div class="captioned-content">
 
-``` {#2. Input and output sections .ld-script}
+<div class="caption">
+
+Output sections
+
+</div>
+
+``` ld-script
 SECTIONS {
   <<2.1 text output section>>
   <<2.2 data output section>>
   <<2.3 bss output section>>
 }
 ```
-::::
+
+</div>
 
 ### 2.1 Text output section
 
 The `.text` output section gathers together all the parts of the input
 that will end up in flash memory.
 
-:::: captioned-content
-::: caption
-Text output section
-:::
+<div class="captioned-content">
 
-``` {#2.1 text output section .ld-script}
+<div class="caption">
+
+Text output section
+
+</div>
+
+``` ld-script
 .text : {
   KEEP(*(.vectors))
   *(.text*)
   *(.rodata*)
 } >FLASH
 ```
-::::
+
+</div>
 
 Each line of this part of the script specifies a set of input sections;
 namely, those matching the pattern in the line. For example, the pattern
-`*(.text*)`{.ld-script} matches all input files (that\'s the first
-asterisk) and, within those, all sections whose name begin with
-\`src~ld~-script{.text}\' (that\'s the second asterisk). [^3]
+`*(.text*)` matches all input files (that's the first asterisk) and,
+within those, all sections whose name begin with
+\`src<sub>ld</sub>-script{.text}' (that's the second asterisk). [^3]
 
-The interrupt vectors section is wrapped in "src~ld~-script{KEEP}"
-because, as I understand it, the linker may choose to omit (or "garbage
-collect") sections that don\'t appear to be referenced by the main
-sections.
+The interrupt vectors section is wrapped in
+“src<sub>ld</sub>-script{KEEP}” because, as I understand it, the linker
+may choose to omit (or “garbage collect”) sections that don't appear to
+be referenced by the main sections.
 
 ### 2.2 Data output section
 
-:::: captioned-content
-::: caption
-Data output section
-:::
+<div class="captioned-content">
 
-``` {#2.2 data output section .ld-script}
+<div class="caption">
+
+Data output section
+
+</div>
+
+``` ld-script
 .data : ALIGN(4) {
   __data_start = .;
   *(.data)
@@ -212,33 +226,36 @@ Data output section
 } >RAM AT >FLASH
 __data_end = __data_start + SIZEOF(.data);  
 ```
-::::
 
-The data section is tricky. It needs to say something like, "these input
+</div>
+
+The data section is tricky. It needs to say something like, “these input
 sections should be loaded into flash memory but *look* as if it they are
 present in RAM, in the sense that, whenever any of the addresses in
 these sections are referenced, those references should point to the
-section in `RAM`." That\'s what "src~ld~-script{\>RAM AT \>FLASH}" does.
-[^4]
+section in `RAM`.” That's what “src<sub>ld</sub>-script{\>RAM AT
+\>FLASH}” does. [^4]
 
-I\'m not sure why the two data lines aren\'t a single line,
-`*(.data*)`{.ld-script}, but this is what the Arm example linker script
-does so I have copied it.
+I'm not sure why the two data lines aren't a single line, `*(.data*)`,
+but this is what the Arm example linker script does so I have copied it.
 
 Finally, this section begins with an alignment command: in this case,
 that the section should start on a memory address divisible by four.
 Obviously it will, because it will start at the origin of RAM, which is
-divisible by four; but, again, the practice of putting in an
-`ALIGN`{.ld-script} seems to be the norm.
+divisible by four; but, again, the practice of putting in an `ALIGN`
+seems to be the norm.
 
 ### 2.3 BSS output section
 
-:::: captioned-content
-::: caption
-BSS output section
-:::
+<div class="captioned-content">
 
-``` {#2.3 bss output section .ld-script}
+<div class="caption">
+
+BSS output section
+
+</div>
+
+``` ld-script
 .bss : ALIGN(4) {
   __bss_start = .;
   *(.bss)
@@ -247,11 +264,12 @@ BSS output section
 } >RAM
 __bss_end = __bss_start + SIZEOF(.bss);
 ```
-::::
 
-The `bss`{.ld-script} output section merely reserves space (in RAM) for
-the uninitialised data section. (Which I feel is something of a
-misnomer, since it *will* be initialised, just to zero.)
+</div>
+
+The `bss` output section merely reserves space (in RAM) for the
+uninitialised data section. (Which I feel is something of a misnomer,
+since it *will* be initialised, just to zero.)
 
 ## 3. Entry point
 
@@ -261,21 +279,21 @@ misnomer, since it *will* be initialised, just to zero.)
 
 # Sources
 
--   I have taken the memory layout from the nRF52833 product
-    specification.
+- I have taken the memory layout from the nRF52833 product
+  specification.
 
--   I have referred to both the Arm and Nordic Semiconductor example
-    linker scripts (and startup files).
+- I have referred to both the Arm and Nordic Semiconductor example
+  linker scripts (and startup files).
 
--   The [GNU `ld`
-    manual](https://sourceware.org/binutils/docs/ld/index.html) explains
-    the meanings of the various parts of the linker script.
+- The [GNU `ld`
+  manual](https://sourceware.org/binutils/docs/ld/index.html) explains
+  the meanings of the various parts of the linker script.
 
 # Footnotes
 
 [^1]: The example linker script provided by Nordic Semiconductor breaks
     out more of the input sections into their own output sections. I
-    don\'t know why one chooses one approach over another.
+    don't know why one chooses one approach over another.
 
 [^2]: We should probably run `ld` with `--orphan-handling=warn`.
 
@@ -283,6 +301,6 @@ misnomer, since it *will* be initialised, just to zero.)
     `-ffunction-sections` is used.
 
 [^4]: The terminology is as follows. The address of this section at
-    run-time is called the "virtual memory address" \[VMA\], whereas the
+    run-time is called the “virtual memory address” \[VMA\], whereas the
     address at which the section is loaded into memory is called the
-    "load memory address" \[LMA\].
+    “load memory address” \[LMA\].
