@@ -16,3 +16,4 @@ jobs:
           pushd our-startup-files
           rm ./out/*
           make
+      - name: Commit
