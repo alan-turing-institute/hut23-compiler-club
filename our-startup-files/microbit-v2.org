@@ -1,5 +1,5 @@
 :PROPERTIES:
-:header-args: :noweb yes :exports code :padline yes
+:header-args: :noweb no-export :exports code :comments noweb :padline yes
 :END:
 #+title: Our BBC micro:bit v2 linker script
 #+author: The Hut23 Compiler Club
@@ -7,13 +7,18 @@
 
 * How to create the linker script
 
-This file explains and is also the source of the linker script we have
-developed for the micro:bit version 2, at least as far as we have
-developed it, which is currently not very far.
+The linker script lives in [[./out/microbit-v2.ld]]. To create both the
+script and this README, run ~make~ in this directory. (You will need
+to have Emacs installed.)
 
-To extract (or “tangle,” in literate-programming parlance) the script
-itself, run ~make~ in this directory. (You will need emacs to be
-installed.)
+The source of this explanation and the script itself is the file
+[[./microbit-v2.org]]. Edit that file rather than the script.
+
+The file [[empty.s]] contains no code or data. Try ~make empty~ to run the
+assembler on this file and then link with the linker script. The file
+[[mostly-empty.s]] contains five bytes of data (in the form of a
+null-terminated string) in each section. Try ~make mostly-empty~ to
+see how the result is arranged in memory by the linker. 
 
 
 * Overview
@@ -25,30 +30,31 @@ into a single output file, also known as an object file, that can be
 loaded into a particular region of memory (or, in our case, flashed
 onto the micro:bit).
 
-However, when input object files are generated, for example by a C
-compiler or an assembler, their final location in memory is not
+However, when input object files are generated---for example by a C
+compiler or an assembler---their final location in memory is not
 known. Thus the files contain, not hard-coded memory locations, but
 /symbols/: stand-ins for the final location of code or data. Each
 symbol is defined in one of the input files to point to a particular
 part of the data, or code, in that input file. The linker must decide
-what final location each symbol refers to and arrange for all the
-references to that symbol, in whatever file the reference occurs, to
-refer to that location.
+to what final location each symbol will refer to and arrange for all
+the references to that symbol, in whatever file the reference occurs,
+to refer to that location.
 
 The linker script is a configuration file read by the linker (use the
 option “​~-T microbit-v2.ld~​”). The purpose of the linker script is:
 
 1. To describe the memory layout of the micro:bit; 
 2. To arrange for the various “sections” of code and data to end up in
-   the correct places in memory in the output object file.
-3. To name particular locations in memory that can only be decided at
-   link time but which are referenced by the code.
+   the correct places in memory in the output object file; and
+3. To name and make globally available particular locations in memory
+   that can only be decided at link time but which are referenced by
+   the code.
 
 Here is the overall structure of our script:
 
 #+ATTR_LATEX: :float nil
 #+name: Linker Script
-#+begin_src ld :tangle ./out/microbit-v2.ld 
+#+begin_src ld-script :tangle ./out/microbit-v2.ld 
   /* 
   BBC micro:bit v2 linker script
   Written by the Hut23 Compiler Club
@@ -57,7 +63,7 @@ Here is the overall structure of our script:
 
   <<1. Memory layout>>
   <<2. Input and output sections>>
-  <<3. Entry point>>
+  <<3. Global symbols>>
 #+end_src
 
 Each part is expanded below.
@@ -69,7 +75,7 @@ Each part is expanded below.
 
 The Cortex M4 is a 32-bit CPU, meaning that it can in principle
 address \(2^{32}\) bytes---or 4 GiB---of memory. However, the nRF52833
-physically has only 512 kiB of flash memory and 128 kiB of RAM (see
+physically only has 512 kiB of flash memory and 128 kiB of RAM (see
 section 4.2.3, figure 3, of the nRF52833 product specification). The
 mapping of that physical memory into the 4 GiB of “virtual” memory
 space is described by the first part of the linker script.
@@ -77,18 +83,17 @@ space is described by the first part of the linker script.
 #+ATTR_LATEX: :float nil
 #+name: 1. Memory layout
 #+caption: Memory layout of the Nordic nRF528333
-#+begin_src ld
+#+begin_src ld-script
 MEMORY {
-  FLASH    (rx) : ORIGIN = 0x00000000, LENGTH = 512K  
-  RAM      (wx) : ORIGIN = 0x20000000, LENGTH = 128K
-  CODE_RAM (wx) : ORIGIN = 0x00800000, LENGTH = 128K 
+  FLASH    (rx)  : ORIGIN = 0x00000000, LENGTH = 512K  
+  RAM      (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+  CODE_RAM (rwx) : ORIGIN = 0x00800000, LENGTH = 128K 
 }
 #+end_src
 
 (By the way, every linker file I've seen writes the attributes of the
-RAM section as ~rwx~ rather than (as here) just ~wx~. However, the GNU
-~ld~ manual (section 3.8) clearly says that the attribute ~w~ means
-read /and/ write.)
+RAM section as ~rwx~ even though the GNU ~ld~ manual, section 3.8,
+clearly says that the attribute ~w~ means read /and/ write.)
 
 On this device the 128 kiB of physical RAM is mapped /both/ to the
 normal location (labelled as ~RAM~) and /also/ to an area of memory
@@ -127,7 +132,7 @@ may be others but these seem to be the critical ones.) They are:
 No-one remembers what “BSS” stands for. Some people read it as “better
 save space.” In some sense the ~.bss~ section is unnecessary: data in
 this section is supposed to be initialised to zero before the program
-begins so it could have been placed in the ~.data~ section. However,
+begins, so it could have been placed in the ~.data~ section. However,
 the output file can be made smaller by not storing the actual zeros
 but instead merely noting how much space they will need. When the
 program starts, one of its first jobs will be to zero the memory
@@ -161,7 +166,7 @@ understanding is that they will be placed in the output file
 #+ATTR_LATEX: :float nil
 #+name: 2. Input and output sections
 #+caption: Output sections
-#+begin_src ld
+#+begin_src ld-script :noweb no-export
   SECTIONS {
     <<2.1 text output section>>
     <<2.2 data output section>>
@@ -172,12 +177,13 @@ understanding is that they will be placed in the output file
 *** 2.1 Text output section
 
 The ~.text~ output section gathers together all the parts of the input
-that will end up in flash memory.
+that will end up in flash memory: the vector table, program code, and
+read-only daya. 
 
 #+ATTR_LATEX: :float nil
 #+name: 2.1 text output section
 #+caption: Text output section
-#+begin_src ld 
+#+begin_src ld-script 
     .text : {
       KEEP(*(.vectors))
       *(.text*)
@@ -189,70 +195,154 @@ Each line of this part of the script specifies a set of input
 sections; namely, those matching the pattern in the line. For example,
 the pattern src_ld-script{*(.text*)} matches all input files (that's
 the first asterisk) and, within those, all sections whose name begin
-with `src_ld-script{.text}' (that's the second asterisk). [fn:2]
+with src_ld-script{.text} (that's the second asterisk). [fn:2]
 
-The interrupt vectors section is wrapped in “src_ld-script{KEEP}”
-because, as I understand it, the linker may choose to omit (or
-“garbage collect”) sections that don't appear to be referenced by the
-main sections.
+The ~.vectors~ section is wrapped in src_ld-script{KEEP} because, as I
+understand it, the linker may choose to omit (or “garbage collect”)
+sections that don't appear to be referenced by the main sections.
 
 *** 2.2 Data output section
+
+The data section is tricky. It contains the initial values of data
+that the program may need to change during the course of its
+execution. Thus, although this section should be loaded into flash
+memory, it will need to be moved to RAM and all the symbols within it
+should resolve to addresses in RAM.
+
+The terminology is as follows. The address of the section at run-time
+(in RAM) is called the “virtual memory address” [VMA]. The address at
+which the section is loaded into memory (that is, in flash memory) is
+called the “load memory address” [LMA]. Thus, the linker must arrange
+for this section to be loaded at the LMA but resolve symbols within it
+to point to VMA.
+
+Of course, the data /isn't/ at the VMA when the program starts. It's
+at the LMA! As a startup action, therefore, the program itself will
+need to copy the data from the LMA to the VMA. 
+
+Schematically, the linker syntax for output sections is as follows:
+#+begin_src ld-script :noweb no
+.data [VMA address] : [LMA address] {
+   input sections, ...
+} >[VMA memory] AT >[LMA memory]
+#+end_src
+
+The VMA and LMA addresses do not need to be specified explicitly. The
+linker puts the section in the next available memory after the last
+section in the same region.
+
+However, it will be convenient (when we come to write the code to move
+the data from LMA to VMA) to have this section start and end on a
+four-byte boundary because that is the size of a single register in
+the CPU. At each point in the linker script, the /location counter/,
+denoted by a period, is the address of the current section, relative
+to the nearest enclosing scope. The command src_ld-script{ALIGN(4)}
+returns the value of the location counter, incremented if necessary to
+the next location divisible by four. A typical way to ensure the
+location counter is aligned is to write something like
+#+begin_src ld-script :noweb no
+  ...
+  . = ALIGN(4);
+  ...
+#+end_src
+in the script. That assigns the aligned value of the location counter
+back to the location counter. However, outside the ~.data~ section the
+location counter refers to the VMA, whereas inside the ~.data~ section
+it will (I think, it's confusing) refer to the /offset/ from the
+beginning of the session. In neither case will it align the start of
+the LMA (which also need to do). The follow approach seems (after much
+experimentation!) do to the right thing:
 
 #+ATTR_LATEX: :float nil
 #+name: 2.2 data output section
 #+caption: Data output section
-#+begin_src ld 
-    .data : ALIGN(4) {
-      __data_start = .;
+#+begin_src ld-script
+  .data : ALIGN(4) {
       *(.data)
       *(.data.*)
+      . = ALIGN(4);
     } >RAM AT >FLASH
-    __data_end = __data_start + SIZEOF(.data);  
 #+end_src
 
-The data section is tricky. It needs to say something like, “these
-input sections should be loaded into flash memory but /look/ as if it
-they are present in RAM, in the sense that, whenever any of the
-addresses in these sections are referenced, those references should
-point to the section in ~RAM~.” That's what “src_ld-script{>RAM AT
->FLASH}” does. [fn:4]
+In the ~[LMA address]~ part of the header line, we assign the LMA to
+the aligned location counter (which at this point happens to be the
+LMA). As far as I can tell, ~ld~ will /also/ ensure that the VMA
+address is similarly aligned, although the manual does not make this
+clear. At the end of the section the final align command pads the
+section, if necessary so that the section is guaranteed to have a
+length that is a multiple of four.
 
-I'm not sure why the two data lines aren't a single line,
-src_ld-script{*(.data*)}, but this is what the Arm example linker
+It's necessary to export symbols that refer to the actual locations of
+the LMA and VAM (so that the startup code can move the data from one
+to the other). It is common practice to to this by defining, at
+particular points in the script, symbols which refer to the location
+counter at that point. For example, one might write ~__data_start =
+.;~ to export the beginning of the data section. I don't know why
+people do this, since one can also write ~__data_start = ADDR(.data);~
+(and that is what we will below). My current hypothesis is that it's
+historical but I am slightly worried that there's an edge case I have
+not understood. (It is definitely true that things are more
+complicated than they might appear: see, e.g., the GNU ~ld~ manual,
+[[https://sourceware.org/binutils/docs/ld.html#Location-Counter][section 3.10.5]].
+
+One last note: I'm not sure why the two data lines aren't a single
+line, src_ld-script{*(.data*)}, but this is what the Arm example linker
 script does so I have copied it.
 
-Finally, this section begins with an alignment command: in this case,
-that the section should start on a memory address divisible by
-four. Obviously it will, because it will start at the origin of RAM,
-which is divisible by four; but, again, the practice of putting in an
-src_ld-script{ALIGN} seems to be the norm. 
-
 *** 2.3 BSS output section
+
+The src_ld-script{bss} output section merely reserves space (in RAM)
+for the uninitialised data section. (Which I feel is something of a
+misnomer, since it /will/ be initialised, just to zero.) We use the
+same alignment trick as before.
 
 #+ATTR_LATEX: :float nil
 #+name: 2.3 bss output section
 #+caption: BSS output section
-#+begin_src ld 
+#+begin_src ld-script 
   .bss : ALIGN(4) {
-    __bss_start = .;
     *(.bss)
     *(.bss.*);
     . = ALIGN(4);
   } >RAM
-  __bss_end = __bss_start + SIZEOF(.bss);
 #+end_src
 
-The src_ld-script{bss} output section merely reserves space (in RAM)
-for the uninitialised data section. (Which I feel is something of a
-misnomer, since it /will/ be initialised, just to zero.)
+** 3. Global symbols
 
-** 3. Entry point
+This part of the script defines symbols containing the addresses of
+the start and end of various sections.
 
+#+ATTR_LATEX: :float nil
+#+name: 3. Global symbols
+#+begin_src ld-script  
+  /* All the memory from the end of bss to the top of RAM */
+  __heap_start = .;
+  __stack_top = ORIGIN(RAM) + LENGTH(RAM);
 
-* What is missing?
+  /* VMA of the .data section */
+  __data_start = ADDR(.data); 
+  __data_end   = __data_start + SIZEOF(.data);
 
-1. Exported symboles.
-   
+  /* LMA of the .data section */
+  __data_load_start = LOADADDR(.data);
+  
+  /* VMA of the .bss section */
+  __bss_start = ADDR(.bss);
+  __bss_end   = __bss_start + SIZEOF(.bss);
+
+  /* Entry point (for gdb */
+  ENTRY(Reset_Handler);
+#+end_src
+
+The area between ~__heap_start~ and ~stack_top~ is all the RAM that is
+usable by the program at runtime. (By the way, there are presumably
+naming conventions for these things which I am not sure I am
+respecting.) Then we need the locations of the ~.data~ and ~.bss~
+sections. Finally, it is apparently helpful to define the “entry
+point” to the program, because it helps ~GDB~ (the GNU debugger). At
+some point, we wil have to write this code as well and assign the
+label ~Entry_Handler~. .
+
 
 * Sources
 
@@ -277,7 +367,4 @@ sections. I don't know why one chooses one approach over another.
 
 [fn:3] We should probably run ~ld~ with ~--orphan-handling=warn~.
 
-[fn:4] The terminology is as follows. The address of this section at run-time
-is called the “virtual memory address” [VMA], whereas the address at
-which the section is loaded into memory is called the “load memory
-address” [LMA].
+
