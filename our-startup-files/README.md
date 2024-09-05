@@ -5,42 +5,44 @@ title: "Our BBC micro:bit v2 linker script"
 
 # How to create the linker script
 
-The linker script lives in
-[file:./out/microbit-v2.ld](./out/microbit-v2.ld). To create both the
-script and this README, run `make` in this directory. (You will need to
-have Emacs installed.)
+This README was generated from the file
+[file:./microbit-v2.org](./microbit-v2.org). That file also generates
+the linker script, [file:./out/microbit-v2.ld](./out/microbit-v2.ld). To
+create both this document and the script, run `make` in this directory.
+(You will need to have Emacs installed.)
 
-The source of this explanation and the script itself is the file
-[file:./microbit-v2.org](./microbit-v2.org). Edit that file rather than
-the script.
-
-The file <span class="spurious-link" target="empty.s">*empty.s*</span>
-contains no code or data. Try `make empty` to run the assembler on this
-file and then link with the linker script. The file
-<span class="spurious-link"
-target="mostly-empty.s">*mostly-empty.s*</span> contains five bytes of
-data (in the form of a null-terminated string) in each section. Try
-`make mostly-empty` to see how the result is arranged in memory by the
-linker.
+The file [file:./empty.s](./empty.s) contains no code or data. Try
+`make empty` to run the assembler on this file and then link with the
+linker script. The file [file:./nearly-empty.s](./nearly-empty.s)
+contains five bytes of data (in the form of a null-terminated string) in
+each section. Try `make
+mostly-empty` to see how the result is arranged in memory by the linker.
 
 # Overview
 
-The input to the linker (eg, GNU `ld`) is a set of files, known as
-*object files*, containing code (in binary format) and data. The job of
-the linker is to combine all the code and data in the input files into a
-single output file, also known as an object file, that can be loaded
-into a particular region of memory (or, in our case, flashed onto the
-micro:bit).
+A C compiler converts high-level code into low-level assembly language
+instructions. Assembly language is a human-readable form of the CPU's
+native instructions with a few convenience features (such as symbolic
+naming of memory locations). The assembler turns this human-readable
+file into a binary file, known as an “object file.” For example, the
+assembler instruction `movs r0, #10`, meaning “move the number 10 to
+register `r0`,” is converted to the two-byte sequence `20` `0a` (in
+hexadecimal).
 
-However, when input object files are generated—for example by a C
-compiler or an assembler—their final location in memory is not known.
-Thus the files contain, not hard-coded memory locations, but *symbols*:
-stand-ins for the final location of code or data. Each symbol is defined
-in one of the input files to point to a particular part of the data, or
-code, in that input file. The linker must decide to what final location
-each symbol will refer to and arrange for all the references to that
-symbol, in whatever file the reference occurs, to refer to that
-location.
+The final stage of compilation is to pass the object file (or files) to
+the linker (GNU `ld`). The job of the linker is to combine all the code
+and data in the input files into a single output file—also known as an
+object file—which can be loaded into a particular region of memory (or,
+in our case, flashed onto the micro:bit).
+
+However, when the input files are generated their final location in
+memory is not known. Thus the files contain, not hard-coded memory
+locations, but *symbols*: stand-ins for the final location of code or
+data. Each symbol is defined in one of the input files to point to a
+particular part of the data, or code, in that input file. The linker
+must decide to what final location each symbol will refer and arrange
+for all the references to that symbol, in whatever file the reference
+occurs, to refer to that location.
 
 The linker script is a configuration file read by the linker (use the
 option “​`-T microbit-v2.ld`​”). The purpose of the linker script is:
@@ -194,7 +196,7 @@ SECTIONS {
 
 The `.text` output section gathers together all the parts of the input
 that will end up in flash memory: the vector table, program code, and
-read-only daya.
+read-only data.
 
 <div class="captioned-content">
 
@@ -214,11 +216,11 @@ Text output section
 
 </div>
 
-Each line of this part of the script specifies a set of input sections;
-namely, those matching the pattern in the line. For example, the pattern
-`*(.text*)` matches all input files (that's the first asterisk) and,
-within those, all sections whose name begin with `.text` (that's the
-second asterisk). [^3]
+The opening `.text` names the output section. Each line within the curly
+braces specifies a set of input sections; namely, those matching the
+pattern in the line. For example, the pattern `*(.text*)` matches all
+input files (that's the first asterisk) and, within those, all sections
+whose name begin with `.text` (that's the second asterisk). [^3]
 
 The `.vectors` section is wrapped in `KEEP` because, as I understand it,
 the linker may choose to omit (or “garbage collect”) sections that don't
@@ -229,7 +231,7 @@ appear to be referenced by the main sections.
 The data section is tricky. It contains the initial values of data that
 the program may need to change during the course of its execution. Thus,
 although this section should be loaded into flash memory, it will need
-to be moved to RAM and all the symbols within it should resolve to
+to be copied to RAM and so all the symbols within it should resolve to
 addresses in RAM.
 
 The terminology is as follows. The address of the section at run-time
@@ -255,12 +257,12 @@ The VMA and LMA addresses do not need to be specified explicitly. The
 linker puts the section in the next available memory after the last
 section in the same region.
 
-However, it will be convenient (when we come to write the code to move
+However, it will be convenient (when we come to write the code to copy
 the data from LMA to VMA) to have this section start and end on a
 four-byte boundary because that is the size of a single register in the
 CPU. At each point in the linker script, the *location counter*, denoted
-by a period, is the address of the current section, relative to the
-nearest enclosing scope. The command `ALIGN(4)` returns the value of the
+by a period, is the address of the current item, relative to the nearest
+enclosing scope. The command `ALIGN(4)` returns the value of the
 location counter, incremented if necessary to the next location
 divisible by four. A typical way to ensure the location counter is
 aligned is to write something like
@@ -306,17 +308,17 @@ necessary so that the section is guaranteed to have a length that is a
 multiple of four.
 
 It's necessary to export symbols that refer to the actual locations of
-the LMA and VAM (so that the startup code can move the data from one to
+the LMA and VMA (so that the startup code can copy the data from one to
 the other). It is common practice to to this by defining, at particular
 points in the script, symbols which refer to the location counter at
 that point. For example, one might write `__data_start =
 .;` to export the beginning of the data section. I don't know why people
 do this, since one can also write `__data_start = ADDR(.data);` (and
-that is what we will below). My current hypothesis is that it's
+that is what we will in fact do). My current hypothesis is that it's
 historical but I am slightly worried that there's an edge case I have
 not understood. (It is definitely true that things are more complicated
 than they might appear: see, e.g., the GNU `ld` manual, [section
-3.10.5](https://sourceware.org/binutils/docs/ld.html#Location-Counter).
+3.10.5](https://sourceware.org/binutils/docs/ld.html#Location-Counter).)
 
 One last note: I'm not sure why the two data lines aren't a single line,
 `*(.data*)`, but this is what the Arm example linker script does so I
