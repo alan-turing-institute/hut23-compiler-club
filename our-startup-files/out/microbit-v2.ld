@@ -9,6 +9,7 @@ MEMORY {
   RAM      (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
   CODE_RAM (rwx) : ORIGIN = 0x00800000, LENGTH = 128K 
 }
+
 SECTIONS {
   .text : {
     KEEP(*(.vectors))
@@ -19,13 +20,14 @@ SECTIONS {
       *(.data)
       *(.data.*)
       . = ALIGN(4);
-    } >RAM AT >FLASH
+  } >RAM AT >FLASH
   .bss : ALIGN(4) {
     *(.bss)
     *(.bss.*);
     . = ALIGN(4);
   } >RAM
 }
+
 /* All the memory from the end of bss to the top of RAM */
 __heap_start = .;
 __stack_top = ORIGIN(RAM) + LENGTH(RAM);
@@ -41,5 +43,5 @@ __data_load_start = LOADADDR(.data);
 __bss_start = ADDR(.bss);
 __bss_end   = __bss_start + SIZEOF(.bss);
 
-/* Entry point (for gdb */
+/* Entry point (for gdb) */
 ENTRY(Reset_Handler);
