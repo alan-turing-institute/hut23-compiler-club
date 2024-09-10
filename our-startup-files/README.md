@@ -3,8 +3,6 @@ author: The Hut23 Compiler Club
 title: "Our BBC micro:bit v2 linker script"
 ---
 
-num:nil
-
 # Introduction
 
 ## Creating the linker script from this file

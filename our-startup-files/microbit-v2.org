@@ -5,8 +5,6 @@
 #+author: The Hut23 Compiler Club
 #+options:
 
-num:nil 
-
 * Introduction
 
 ** Creating the linker script from this file
