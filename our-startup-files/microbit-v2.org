@@ -352,7 +352,7 @@ the start and end of various sections.
 The area between ~__heap_start~ and ~__stack_top~ is all the RAM that
 is usable by the program at runtime. (By the way, there are presumably
 naming conventions for these things which I am not sure I am
-respecting.) Then we need the locations of the ~.data~ and ~.bss~
+respecting.) Then we need thex locations of the ~.data~ and ~.bss~
 sections. Finally, it is apparently helpful to define the “entry
 point” to the program, because it helps ~GDB~ (the GNU debugger). At
 some point, we will have to write this startup code and assign the
