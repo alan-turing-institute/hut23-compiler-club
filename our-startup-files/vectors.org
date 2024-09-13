@@ -1,0 +1,168 @@
+#+title: The interrupt vector table
+
+An /interrupt/, or /exception/, is the occurence of an event that must
+be dealt with asynchronously, outside the normal flow of program
+execution. The typical cause is some peripheral wanting the CPU's
+attention, or altering the CPU that some event has happened.
+
+When an exception happens, the processor is “interrupted:” it stops
+whatever it was doing and jumps to an /interrupt handler/. The
+interrupt vector table is an area of memory holding the addresses of
+functions to be called in the event of particular exceptions.
+
+The layout of the vector table is described in [[../reference/cpu/cortex-m4-gug.pdf][the Arm Cortex M4
+generic user guide]], section 2.3. Arm terminology is confusing
+here. The terms “exception” and “interrupt” are used almost, but not
+quite, interchangeably. Arm makes a distinction between the kinds of
+events that occur due to CPU-specific peripherals, which it tends to
+refer to as exceptions, and those due to vendor-specific peripherals
+or software interrupts, which it tends to refer to as
+interrupts. Sometimes an interrupt is referred to as as “IRQ” (or
+“interrupt request”) and in this case what is meant is precisely the
+non-exception--type interrupts. 
+
+The layout is roughly as follows. Each vector is a 32-bit word (that
+is, four bytes) and the table starts at memory location 0 (although,
+confusingly, the first word is not an interrupt vector). Otherwise,
+all exceptions are numbered from 1. The column “ENo” is the exception
+number (this is not a standard abbreviation). The address of a vector
+is sometimes known as an “offset” because in principle the vector
+table may be relocated to some other address in memory.
+
+| Address | ENo | IRQ | Vector     |
+|---------+-----+-----+------------|
+|  0x00fc |  63 |  47 | IRQ 47     |
+|     ... |  .. |  .. | ...        |
+|    0040 |  16 |   0 | IRQ 0      |
+|---------+-----+-----+------------|
+|    003c |  15 |  -1 | Systick    |
+|     ... |  .. |  .. | ...        |
+|    0008 |   2 | -14 | NMI        |
+|    0004 |   1 |     | Reset      |
+|---------+-----+-----+------------|
+|    0000 |     |     | Initial SP |
+
+The Cortex M4 can be configured with up to 240 IRQ-type interrupts
+(that is, up to IRQ 239); the nRF52833 has (I think) 48. The first 15
+exceptions (which have negative interrupt numbers) are defined in the
+Arm reference documentation; the rest are defined by the nRF52833.
+
+Interrupt vectors 0 and 1 are special and are used on system reset. On
+reset, two things happen:
+1. The value of the stack pointer is loaded from offset 0;
+2. The CPU jumps to the reset handler, located at offset 4.
+
+The exceptions are as follows (now in order from low memory to
+high). Exceptions 7--10 and 12--13 are reserved (that is, there are no
+such exceptions in this processor). See section 2.3.2 of the the Arm
+Cortex M4 generic user guide for explanations of each.
+
+#+begin_src asm
+  					/* Addr. ENo IRQ Pri Exception    */
+  .section .vectors			/* ----- --- --- --- ------------ */
+	.word __stack_top		/*  0000   -   -     Inital SP    */
+	.word Reset_Handler     	/*  0004   1   -  -3 Reset        */
+	.word NMI_Handler       	/*  0008   2 -14  -2 NMI          */
+	.word HardFault_Handler		/*  000c   3 -13  -1 Hard Fault   */
+	.word MemoryManagement_Handler  /*  
+#+end_src
+
+In the following table, “Name” is the base name of various symbols as
+defined in the file ~mdk/nrf52833_vectors.h~. (For example, the
+address of a handler of ~Name~ is ~Name_Handler~.)
+
+| Address | ENo | IRQ | Pri | Name               | Description                |
+|         |     |     | <r> |                    |                            |
+|---------+-----+-----+-----+--------------------+----------------------------|
+|  0x0000 |   – |     |     |                    | Initial SP                 |
+|---------+-----+-----+-----+--------------------+----------------------------|
+|    0004 |   1 |   – |  -3 | ~Reset~            | System reset               |
+|    0008 |   2 | -14 |  -2 | ~NMI~              | Non-maskable interupt      |
+|    000c |   3 | -13 |  -1 | ~HardFault~        | Hard Fault                 |
+|    0010 |   4 | -12 |   . | ~MemoryManagement~ | Memory Manage Fault        |
+|    0014 |   5 | -11 |   . | ~BusFault~         | Bus Fault                  |
+|    0018 |   6 | -10 |   . | ~UsageFault~       | Eg, unaligned access       |
+|    001c |   7 |  -9 |   . | –                  | –                          |
+|    0020 |   8 |  -8 |   . | –                  | –                          |
+|    0024 |   9 |  -7 |   . | –                  | –                          |
+|    0028 |  10 |  -6 |   . | –                  | –                          |
+|    002c |  11 |  -5 |   . | ~SVC~              | Supervisor call            |
+|    0030 |  12 |  -4 |   . | ~DebugMon~         | Not sure                   |
+|    0034 |  13 |  -3 |   . | –                  | –                          |
+|    0038 |  14 |  -2 |   . | ~PendSV~           | Request for system service |
+|    003c |  15 |  -1 |   . | ~SysTick~          | System timer reaches zero  |
+|---------+-----+-----+-----+--------------------+----------------------------|
+
+Each exception has an associated “priority” which determines which
+exception is processed next when multiple interrupts are pending; and
+whether a particular exception may be pre-empted by another. Lower
+priority numbers have higher priority. The priority is configurable
+from 0 to 7, except that Reset, NMI (Non-Maskable Interrupt) and Hard
+Fault are fixed to -3, -2, and -1 respectively.
+
+The following table shows the interrupts defined by the nRF52833. Note
+that the exception number is the IRQ plus 16.
+
+| IRQ |    | Name                                | Description              |
+|     |    |                                     |                          |
+|-----+----+-------------------------------------+--------------------------|
+|   0 |  0 | ~POWER_CLOCK~                       | Clock and power          |
+|   1 |  1 | ~RADIO~                             | 2.4 GHz radio            |
+|   2 |  2 | ~UARTE0_IART0~                      | UART                     |
+|   3 |  3 | ~SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0~ | SPI master/slave...      |
+|   4 |  4 | ~SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1~ | ...and 2-wire interface  |
+|   5 |  5 | ~NFCT~                              | Near-field communication |
+|   6 |  6 | ~GPIOTE~                            | GPIO tasks and events    |
+|   7 |  7 | ~SAADC~                             | A/D convertor            |
+|   8 |  8 | ~TIMER0~                            | Timer 0                  |
+|   9 |  9 | ~TIMER1~                            | Timer 1                  |
+|  10 |  a | ~TIMER2~                            | Timer 2                  |
+|  11 |  b | ~RTC0~                              | Real-time counter 0      |
+|  12 |  c | ~TEMP~                              | Temperature sensor       |
+|  13 |  d | ~RNG~                               | Random number generator  |
+|  14 |  e | ~ECB~                               | AES ECB encryption       |
+|  15 |  f | ~CCM_AAR~                           | Accel. address resolver  |
+|  16 | 10 | ~WDT~                               | Watchdog timer           |
+|  17 | 11 | ~RTC1~                              | Real-time counter 1      |
+|  18 | 12 | ~QDEC~                              | Quadrature decoder       |
+|  19 | 13 | ~COMP_LPCOM~                        | Comparator               |
+|  20 | 14 | ~SWI0_EGU0~                         | Software interrupt ...   |
+|  21 | 15 | ~SWI1_EGU1~                         | ... and ...              |
+|  22 | 16 | ~SWI2_EGU2~                         | ... event generator unit |
+|  23 | 17 | ~SWI3_EGU3~                         |                          |
+|  24 | 18 | ~SWI4_EGU4~                         |                          |
+|  25 | 19 | ~SWI5_EGU5~                         |                          |
+|  26 | 1a | ~TIMER3~                            | Timer 3                  |
+|  27 | 1b | ~TIMER4~                            | Timer 4                  |
+|  28 | 1c | ~PWM0~                              | Pulse width modulation   |
+|  29 | 1d | ~PDM~                               | Pulse density modulation |
+|  30 |    | –                                   |                          |
+|  31 |    | –                                   |                          |
+|  32 | 20 | ~MWU~                               | Memory watch unit        |
+|  33 | 21 | ~PWM1~                              | Pulse width modulation   |
+|  34 | 22 | ~PWM2~                              | Pulse width modulation   |
+|  35 | 23 | ~SPIM2_SPIS2_SPI2~                  | SPI master/slave         |
+|  36 | 24 | ~RTC2~                              | Real-time counter        |
+|  37 | 25 | ~I2S~                               | Inter-IC sound interface |
+|  38 | 26 | ~FPU~                               | FPU interrupt            |
+|  39 | 27 | ~USBD~                              | USB device               |
+|  40 | 28 | ~UARTE1~                            | UART 1                   |
+|  41 |    | –                                   |                          |
+|  .. |    | ..                                  |                          |
+|  44 |    | –                                   |                          |
+|  45 | 2d | ~PWM3~                              | Pulse width modulation   |
+|  46 |    |                                     |                          |
+|  47 | 2f | ~SPIM3~                             | SPI master               |
+|  48 |    | –                                   |                          |
+|  .. |    | ..                                  |                          |
+| 111 |    | –                                   |                          |
+|-----+----+-------------------------------------+--------------------------|
+
+  
+
+
+
+
+
+
+
