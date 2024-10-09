@@ -1,0 +1,18 @@
+I am planning to write a compiler; or, at least, the back end bits of
+one.
+
+Current next steps.
+
+1. Find some version of Mike Spivey's C code which sets up a minimal
+   environment and a main() function. The idea is to be able to use
+   that to call functions generated from my "compiler".
+
+2. Figure out how to emit assembly using the nanopass framework, and
+   how to call the emitted code from the framework in (1).
+
+3. Figure out the arm eabi calling convetion
+
+4. Write the next level of the compiler (which is likely to be either
+   function calls or register allocation).
+
+
