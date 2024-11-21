@@ -15,4 +15,15 @@ Current next steps.
 4. Write the next level of the compiler (which is likely to be either
    function calls or register allocation).
 
+* Diary
+
+** 20 November 2024
+
+- In ForkedProjects, in ~microbian~, ran ~make~. That compiled!
+
+For next time: get hold of the updated version of the repo! Need to
+either pull the Institute's fork, or update my fork,
+
+
+
 
